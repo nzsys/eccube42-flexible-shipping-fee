@@ -1,0 +1,13 @@
+{
+    "name": "ec-cube/flexible-shipping-fee",
+    "version": "1.0.0",
+    "description": "フレキシブル送料拡張設定プラグイン",
+    "type": "ec-cube-plugin",
+    "require": {
+        "ec-cube/plugin-installer": "~0.1",
+        "ec-cube/ec-cube": "^4.2"
+    },
+    "extra": {
+        "code": "FlexibleShippingFee"
+    }
+}

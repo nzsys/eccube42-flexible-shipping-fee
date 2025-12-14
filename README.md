@@ -1,0 +1,257 @@
+# FlexibleShippingFee
+
+EC-CUBE4用の送料拡張設定プラグイン。  
+管理画面から送料エリアと都道府県のマッピング及び送料を設定できます。
+
+## 概要
+
+送料計算ロジックのハードコードを解消し，管理画面から設定可能にします。
+
+### 主な機能
+
+1. **送料エリア管理**
+   - エリアの作成・編集・削除
+   - 都道府県とエリアのマッピング設定
+
+2. **送料設定管理**
+   - エリアごとにサイズ別の送料を設定
+   - 基本送料，クール便料金，箱代を個別に設定可能
+   - 60サイズ，80サイズ，100サイズに対応
+
+3. **送料内訳の永続化**
+   - 注文ごとに送料の内訳を保存
+   - エリア名，サイズ，数量，各種料金を記録
+
+4. **自動送料計算**
+   - 購入時に商品数量に基づいて自動でサイズを判定
+   - 配送先の都道府県に基づいて送料を自動計算
+
+## 動作要件
+
+- EC-CUBE 4.2以上
+- PHP 7.4以上
+- MySQL 5.7以上 または MariaDB 10.2以上
+
+## インストール方法
+
+### 方法1: 通常のインストール（Composerが利用可能な環境）
+
+1. プラグインディレクトリに配置
+```bash
+cp -r FlexibleShippingFee app/Plugin/
+```
+
+2. プラグインをインストール
+```bash
+bin/console eccube:plugin:install --code=FlexibleShippingFee
+```
+
+3. プラグインを有効化（管理画面からでも可）
+```bash
+bin/console eccube:plugin:enable --code=FlexibleShippingFee
+```
+
+## 初期設定
+
+プラグインインスール時に エリアマッピングと送料設定（基本料・クール便・箱代）とサイズによる制御を初期データとして登録しています。
+
+### 1. 送料エリアの設定
+
+1. 管理画面の「フレキシブル送料設定」→「エリア管理」へ移動
+2. 「新規作成」をクリック
+3. エリア名を入力（例：関東，北海道，沖縄など）
+4. 該当する都道府県にチェックを入れる
+5. 「保存」をクリック
+
+**設定例：**
+```
+エリア名: 関東
+都道府県: 茨城県, 栃木県, 群馬県, 埼玉県, 千葉県, 東京都, 神奈川県, 山梨県
+```
+
+### 2. 送料の設定
+
+1. 管理画面の「フレキシブル送料設定」→「送料設定」へ移動
+2. 設定したいエリアの「料金追加」をクリック
+3. サイズを選択（60/80/100サイズ）
+4. 各種料金を入力：
+   - 基本送料
+   - クール便料金
+   - 箱代
+5. 「保存」をクリック
+
+**設定例：**
+```
+エリア: 関東
+サイズ: 60サイズ
+基本送料: 814円
+クール便料金: 275円
+箱代: 107円
+```
+
+## 利用方法
+
+### 送料の自動計算
+
+プラグインを有効化すると，購入フローで自動的に送料が計算されます。
+
+**計算ロジック：**
+1. カート内の商品数量を集計
+2. 数量に基づいてサイズを決定：
+   - 1〜2個：60サイズ
+   - 3〜4個：80サイズ
+   - 5個以上：エラー（お問い合わせが必要）
+3. 配送先の都道府県からエリアを特定
+4. エリアとサイズから送料を取得
+5. 基本送料 + クール便料金 + 箱代 = 合計送料
+
+### 送料内訳の確認
+
+注文完了後，送料の内訳が自動的に保存されます。
+
+将来的に管理画面の売上管理から以下の情報を確認できます：
+- エリア名
+- サイズ
+- 商品数量
+- 基本送料
+- クール便料金
+- 箱代
+- 合計送料
+
+## テストコード
+
+### テストファイルの場所
+
+プラグインにはPHPUnitを使用した自動テストが含まれています。
+
+```
+app/Plugin/FlexibleShippingFee/Tests/
+└── Service/
+    └── ShippingFeeServiceTest.php
+```
+
+### テスト内容
+
+**ShippingFeeServiceTest.php** - 送料計算サービスのユニットテスト
+
+1. **testCalculateShippingFeeWithoutPrefecture**
+   - 都道府県が設定されていない場合の処理
+   - 期待結果：送料0円，エラーなし
+
+2. **testCalculateShippingFeeWithQuantity2**
+   - 商品数量2個の場合の送料計算（60サイズ）
+   - 期待結果：基本送料814円 + クール便275円 + 箱代107円 = 1196円
+
+3. **testCalculateShippingFeeWithQuantity4**
+   - 商品数量4個の場合の送料計算（80サイズ）
+   - 期待結果：基本送料874円 + クール便330円 + 箱代151円 = 1355円
+
+4. **testCalculateShippingFeeWithQuantityOver5**
+   - 商品数量5個以上の場合のエラーハンドリング
+   - 期待結果：送料0円，エラーメッセージ「5個以上」を含む
+
+5. **testCalculateShippingFeeWithNoArea**
+   - 該当するエリアが存在しない場合のエラーハンドリング
+   - 期待結果：送料0円，エラーメッセージ「配送エリアが見つかりません」
+
+6. **testSaveBreakdown**
+   - 送料内訳の保存処理
+   - 期待結果：各項目が正しく保存される
+
+### テストの実行方法
+
+#### 前提条件
+
+PHPUnitがインストールされている必要があります。
+
+```bash
+# PHPUnitがインストールされているか確認
+which phpunit
+# または
+vendor/bin/phpunit --version
+```
+
+#### 標準環境での実行
+
+```bash
+vendor/bin/phpunit app/Plugin/FlexibleShippingFee/Tests
+```
+
+**注意：** 本番環境ではテストツールのインストールは不要です。開発環境でのみ実行してください。
+
+## アンインストール
+
+### 方法1: コマンドライン
+
+```bash
+bin/console eccube:plugin:disable --code=FlexibleShippingFee
+bin/console eccube:plugin:uninstall --code=FlexibleShippingFee
+```
+
+### 方法2: 管理画面
+
+1. 「オーナーズストア」→「プラグイン」→「プラグイン一覧」
+2. 「FlexibleShippingFee」の「無効化」をクリック
+3. 「アンインストール」をクリック
+
+**注意：** アンインストールすると，設定した送料エリア・送料設定・送料内訳データがすべて削除されます。
+
+## データベース構造
+
+### plg_flexible_shipping_area
+送料エリア情報を管理
+
+| カラム名 | 型 | 説明 |
+|---------|-----|------|
+| id | INT | エリアID（主キー） |
+| name | VARCHAR(255) | エリア名 |
+| sort_no | INT | 並び順 |
+| create_date | DATETIME | 作成日時 |
+| update_date | DATETIME | 更新日時 |
+
+### plg_flexible_shipping_area_pref
+エリアと都道府県のマッピング
+
+| カラム名 | 型 | 説明 |
+|---------|-----|------|
+| id | INT | ID（主キー） |
+| area_id | INT | エリアID |
+| pref_id | INT | 都道府県ID |
+| create_date | DATETIME | 作成日時 |
+| update_date | DATETIME | 更新日時 |
+
+### plg_flexible_shipping_rate
+送料設定
+
+| カラム名 | 型 | 説明 |
+|---------|-----|------|
+| id | INT | ID（主キー） |
+| area_id | INT | エリアID |
+| size | INT | サイズ（60/80/100） |
+| rate | DECIMAL(12,2) | 基本送料 |
+| cool_fee | DECIMAL(12,2) | クール便料金 |
+| box_fee | DECIMAL(12,2) | 箱代 |
+| create_date | DATETIME | 作成日時 |
+| update_date | DATETIME | 更新日時 |
+
+### plg_flexible_shipping_breakdown
+送料内訳
+
+| カラム名 | 型 | 説明 |
+|---------|-----|------|
+| id | INT | ID（主キー） |
+| order_id | INT | 注文ID |
+| shipping_id | INT | 配送ID |
+| area_name | VARCHAR(255) | エリア名 |
+| size | INT | サイズ |
+| quantity | INT | 数量 |
+| base_fee | DECIMAL(12,2) | 基本送料 |
+| cool_fee | DECIMAL(12,2) | クール便料金 |
+| box_fee | DECIMAL(12,2) | 箱代 |
+| total_fee | DECIMAL(12,2) | 合計送料 |
+| create_date | DATETIME | 作成日時 |
+| update_date | DATETIME | 更新日時 |
+
+## ライセンス
+
+このプラグインはMITライセンスに準拠します。

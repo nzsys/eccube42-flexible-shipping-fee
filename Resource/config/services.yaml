@@ -1,0 +1,28 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+        public: true
+
+    Plugin\FlexibleShippingFee\Repository\:
+        resource: '../../Repository/*Repository.php'
+
+    Plugin\FlexibleShippingFee\Controller\:
+        resource: '../../Controller'
+        tags: ['controller.service_arguments']
+
+    Plugin\FlexibleShippingFee\Service\ShippingFeeService:
+        autowire: true
+
+    Plugin\FlexibleShippingFee\Service\PurchaseFlow\Processor\ShippingCalculator:
+        tags:
+            - { name: shopping.purchase_flow.item_holder_preprocessor, priority: 100 }
+            - { name: cart.purchase_flow.item_holder_preprocessor, priority: 100 }
+        autowire: true
+
+    Plugin\FlexibleShippingFee\EventSubscriber\ShoppingEventSubscriber:
+        tags: ['kernel.event_subscriber']
+        autowire: true
+
+    Plugin\FlexibleShippingFee\Nav:
+        tags: ['eccube.nav']

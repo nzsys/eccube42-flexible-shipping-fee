@@ -1,0 +1,100 @@
+{% extends '@admin/default_frame.twig' %}
+
+{% set menus = ['store', 'flexible_shipping_fee', 'flexible_shipping_fee_area'] %}
+
+{% block title %}送料エリア管理{% endblock %}
+{% block sub_title %}FlexibleShippingFee{% endblock %}
+
+{% block stylesheet %}
+<style>
+    .btn-ec-actionIcon {
+        font-size: 1.1rem !important;
+        padding: 0.5rem 0.75rem !important;
+        color: #495057 !important;
+    }
+    .btn-ec-actionIcon:hover {
+        color: #212529 !important;
+        background-color: #f8f9fa !important;
+    }
+</style>
+{% endblock %}
+
+{% block main %}
+    <div class="c-contentsArea__cols">
+        <div class="c-contentsArea__primaryCol">
+            <div class="c-primaryCol">
+                <div class="card rounded border-0 mb-4">
+                    <div class="card-header">
+                        <div class="row">
+                            <div class="col-8">
+                                <span class="card-title">送料エリア一覧</span>
+                            </div>
+                            <div class="col-4 text-end">
+                                <a class="btn btn-ec-regular" href="{{ url('flexible_shipping_fee_admin_area_new') }}">新規作成</a>
+                            </div>
+                        </div>
+                    </div>
+                    <style>.tbl td {vertical-align: middle!important;} .tbl th, .tbl td{padding:5px 10px !important;}</style>
+                    <div class="card-body p-0">
+                        {% if areas is empty %}
+                            <div class="text-center p-4">
+                                エリアが登録されていません。
+                            </div>
+                        {% else %}
+                            <table class="table table-sm tbl">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>エリア名</th>
+                                        <th>対応都道府県数</th>
+                                        <th class="text-end">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for area in areas %}
+                                        <tr>
+                                            <td>{{ area.id }}</td>
+                                            <td>{{ area.name }}</td>
+                                            <td>{{ area.ShippingAreaPrefs|length }}件</td>
+                                            <td class="text-end">
+                                                <a href="{{ url('flexible_shipping_fee_admin_area_edit', {'id': area.id}) }}" class="btn btn-ec-actionIcon me-2">
+                                                    <i class="fa fa-pencil"></i>
+                                                </a>
+                                                <a href="#" class="btn btn-ec-actionIcon" data-bs-toggle="modal" data-bs-target="#deleteModal{{ area.id }}">
+                                                    <i class="fa fa-trash"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+
+                                        <!-- Delete Modal -->
+                                        <div class="modal fade" id="deleteModal{{ area.id }}" tabindex="-1">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title">削除確認</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <p>「{{ area.name }}」を削除してもよろしいですか？</p>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                                                        <form method="post" action="{{ url('flexible_shipping_fee_admin_area_delete', {'id': area.id}) }}" style="display: inline;">
+                                                            <input type="hidden" name="_token" value="{{ csrf_token('flexible_shipping_fee_admin_area_delete' ~ area.id) }}">
+                                                            <input type="hidden" name="_method" value="DELETE">
+                                                            <button type="submit" class="btn btn-danger">削除</button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

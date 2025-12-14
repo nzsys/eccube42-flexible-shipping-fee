@@ -1,0 +1,19 @@
+version: "3.8"
+
+services:
+  app:
+    build:
+      context: .
+    hostname: 'local'
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./eccube:/var/www/eccube
+      - ./php/php.ini:/usr/local/etc/php/php.ini
+      - eccube_var:/var/www/eccube/var
+      - eccube_node_modules:/var/www/eccube/node_modules
+    command: "/bin/bash -c 'if [ ! -f /usr/local/.initialized ]; then chown -R www-data: /var/www/eccube && touch /usr/local/.initialized; fi && apache2-foreground'"
+volumes:
+  eccube_var:
+  eccube_node_modules:

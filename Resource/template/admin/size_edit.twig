@@ -1,0 +1,71 @@
+{% extends '@admin/default_frame.twig' %}
+
+{% set menus = ['store', 'flexible_shipping_fee', 'flexible_shipping_fee_size'] %}
+
+{% block title %}サイズ設定{% if config.id %}編集{% else %}新規作成{% endif %}{% endblock %}
+{% block sub_title %}FlexibleShippingFee{% endblock %}
+
+{% block main %}
+    <form name="size_config_form" method="post" action="">
+        {{ form_widget(form._token) }}
+
+        <div class="c-contentsArea__cols">
+            <div class="c-contentsArea__primaryCol">
+                <div class="c-primaryCol">
+                    <div class="card rounded border-0 mb-4">
+                        <div class="card-header">
+                            <span class="card-title">サイズ設定</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <label class="col-sm-3 col-form-label">{{ form_label(form.size) }}</label>
+                                <div class="col-sm-9">
+                                    {{ form_widget(form.size, {'attr': {'class': 'form-control'}}) }}
+                                    {{ form_errors(form.size) }}
+                                    <small class="form-text text-muted">荷物のサイズ（例：60, 80, 100）</small>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <label class="col-sm-3 col-form-label">{{ form_label(form.min_quantity) }}</label>
+                                <div class="col-sm-9">
+                                    {{ form_widget(form.min_quantity, {'attr': {'class': 'form-control'}}) }}
+                                    {{ form_errors(form.min_quantity) }}
+                                    <small class="form-text text-muted">このサイズの最小商品数量</small>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <label class="col-sm-3 col-form-label">{{ form_label(form.max_quantity) }}</label>
+                                <div class="col-sm-9">
+                                    {{ form_widget(form.max_quantity, {'attr': {'class': 'form-control'}}) }}
+                                    {{ form_errors(form.max_quantity) }}
+                                    <small class="form-text text-muted">このサイズの最大商品数量（空欄の場合は上限なし）</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="c-conversionArea">
+            <div class="c-conversionArea__container">
+                <div class="row justify-content-between align-items-center">
+                    <div class="col-6">
+                        <div class="c-conversionArea__leftBlockItem">
+                            <a class="btn btn-ec-sub btn-lg" href="{{ url('flexible_shipping_fee_admin_size') }}">戻る</a>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="row align-items-center justify-content-end">
+                            <div class="col-auto">
+                                <button type="submit" class="btn btn-ec-conversion btn-lg px-5">保存</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+{% endblock %}
