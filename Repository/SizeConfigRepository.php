@@ -13,7 +13,8 @@ class SizeConfigRepository extends AbstractRepository
         parent::__construct($registry, SizeConfig::class);
     }
 
-    public function findAllOrderBySortNo()
+    /** @return SizeConfig[] */
+    public function findAllOrderBySortNo(): array
     {
         return $this->createQueryBuilder('sc')
             ->orderBy('sc.sort_no', 'ASC')
@@ -22,7 +23,7 @@ class SizeConfigRepository extends AbstractRepository
             ->getResult();
     }
 
-    public function getMaxSortNo()
+    public function getMaxSortNo(): int
     {
         $result = $this->createQueryBuilder('sc')
             ->select('MAX(sc.sort_no)')

@@ -6,8 +6,6 @@ use Doctrine\ORM\Mapping as ORM;
 use Eccube\Entity\Master\Pref;
 
 /**
- * ShippingAreaPref
- *
  * @ORM\Table(name="plg_flexible_shipping_area_pref", uniqueConstraints={@ORM\UniqueConstraint(name="unique_area_pref", columns={"area_id", "pref_id"})})
  * @ORM\Entity(repositoryClass="Plugin\FlexibleShippingFee\Repository\ShippingAreaPrefRepository")
  */

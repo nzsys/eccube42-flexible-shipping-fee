@@ -5,34 +5,34 @@ namespace Plugin\FlexibleShippingFee\EventSubscriber;
 use Eccube\Event\TemplateEvent;
 use Eccube\Repository\OrderRepository;
 use Plugin\FlexibleShippingFee\Repository\ShippingBreakdownRepository;
+use Plugin\FlexibleShippingFee\Repository\SizeConfigRepository;
 use Plugin\FlexibleShippingFee\Service\ShippingFeeService;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 class ShoppingEventSubscriber implements EventSubscriberInterface
 {
-    /**
-     * @var ShippingBreakdownRepository
-     */
+    /** @var ShippingBreakdownRepository */
     private $shippingBreakdownRepository;
 
-    /**
-     * @var OrderRepository
-     */
+    /** @var OrderRepository */
     private $orderRepository;
 
-    /**
-     * @var ShippingFeeService
-     */
+    /** @var ShippingFeeService */
     private $shippingFeeService;
+
+    /** @var SizeConfigRepository */
+    private $sizeConfigRepository;
 
     public function __construct(
         ShippingBreakdownRepository $shippingBreakdownRepository,
         OrderRepository $orderRepository,
-        ShippingFeeService $shippingFeeService
+        ShippingFeeService $shippingFeeService,
+        SizeConfigRepository $sizeConfigRepository
     ) {
         $this->shippingBreakdownRepository = $shippingBreakdownRepository;
         $this->orderRepository = $orderRepository;
         $this->shippingFeeService = $shippingFeeService;
+        $this->sizeConfigRepository = $sizeConfigRepository;
     }
 
     public static function getSubscribedEvents()
@@ -43,7 +43,7 @@ class ShoppingEventSubscriber implements EventSubscriberInterface
         ];
     }
 
-    public function onShopping(TemplateEvent $event)
+    public function onShopping(TemplateEvent $event): void
     {
         $parameters = $event->getParameters();
 
@@ -61,6 +61,7 @@ class ShoppingEventSubscriber implements EventSubscriberInterface
                 $breakdownData = (object) [
                     'areaName' => $result['breakdown']['area_name'],
                     'size' => $result['breakdown']['size'],
+                    'sizeRange' => $result['breakdown']['size_range'],
                     'quantity' => $result['breakdown']['quantity'],
                     'baseFee' => $result['breakdown']['base_fee'],
                     'coolFee' => $result['breakdown']['cool_fee'],
@@ -77,7 +78,7 @@ class ShoppingEventSubscriber implements EventSubscriberInterface
         $event->addSnippet($snippet, false);
     }
 
-    public function onShoppingConfirm(TemplateEvent $event)
+    public function onShoppingConfirm(TemplateEvent $event): void
     {
         $parameters = $event->getParameters();
 
@@ -92,7 +93,19 @@ class ShoppingEventSubscriber implements EventSubscriberInterface
             if ($Shipping->getId()) {
                 $breakdown = $this->shippingBreakdownRepository->findOneBy(['shipping_id' => $Shipping->getId()]);
                 if ($breakdown) {
-                    $breakdowns[$Shipping->getId()] = $breakdown;
+                    $sizeConfig = $this->sizeConfigRepository->findOneBy(['size' => $breakdown->getSize()]);
+                    $sizeRange = $sizeConfig ? $sizeConfig->getRangeLabel() : '';
+
+                    $breakdownData = (object) [
+                        'areaName' => $breakdown->getAreaName(),
+                        'size' => $breakdown->getSize(),
+                        'sizeRange' => $sizeRange,
+                        'quantity' => $breakdown->getQuantity(),
+                        'baseFee' => $breakdown->getBaseFee(),
+                        'coolFee' => $breakdown->getCoolFee(),
+                        'boxFee' => $breakdown->getBoxFee(),
+                    ];
+                    $breakdowns[$Shipping->getId()] = $breakdownData;
                 }
             }
         }
@@ -104,7 +117,7 @@ class ShoppingEventSubscriber implements EventSubscriberInterface
         $event->addSnippet($snippet, false);
     }
 
-    private function getTemplateSnippet()
+    private function getTemplateSnippet(): string
     {
         return <<<'TWIG'
 <style>
@@ -146,7 +159,7 @@ $(document).ready(function() {
         {% for shippingId, breakdown in shipping_breakdowns %}
             var breakdownHtml = '<dl class="shipping-breakdown">' +
                 '<dt>エリア:</dt><dd>{{ breakdown.areaName }}</dd><br>' +
-                '<dt>サイズ:</dt><dd>{{ breakdown.size }}サイズ ({{ breakdown.quantity }}個)</dd><br>' +
+                '<dt>箱サイズ:</dt><dd>{{ breakdown.size }}サイズの箱 ({{ breakdown.sizeRange }})</dd><br>' +
                 '<dt>基本送料:</dt><dd>{{ breakdown.baseFee|price }}</dd><br>' +
                 '<dt>クール便料金:</dt><dd>{{ breakdown.coolFee|price }}</dd><br>' +
                 '<dt>箱代:</dt><dd>{{ breakdown.boxFee|price }}</dd>' +

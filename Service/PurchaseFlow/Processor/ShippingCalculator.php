@@ -21,36 +21,24 @@ use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Plugin\FlexibleShippingFee\Service\ShippingFeeService;
 
 /**
- * Flexible Shipping Fee Calculator using database configuration.
- *
  * @ShoppingFlow()
  * @CartFlow()
  */
 class ShippingCalculator implements ItemHolderPreprocessor
 {
-    /**
-     * @var ShippingFeeService
-     */
+    /** @var ShippingFeeService */
     private $shippingFeeService;
 
-    /**
-     * @var EntityManagerInterface
-     */
+    /** @var EntityManagerInterface */
     private $entityManager;
 
-    /**
-     * @var TaxRuleRepository
-     */
+    /** @var TaxRuleRepository */
     private $taxRuleRepository;
 
-    /**
-     * @var TaxRuleService
-     */
+    /** @var TaxRuleService */
     private $taxRuleService;
 
-    /**
-     * @var SessionInterface
-     */
+    /** @var SessionInterface */
     private $session;
 
     public function __construct(
@@ -67,17 +55,17 @@ class ShippingCalculator implements ItemHolderPreprocessor
         $this->session = $session;
     }
 
-    public function process(ItemHolderInterface $itemHolder, PurchaseContext $context)
-    {
+    public function process(
+        ItemHolderInterface $itemHolder,
+        PurchaseContext $context
+    ): void {
         log_info('[FlexibleShippingFee] ShippingCalculator::process() が呼ばれました - ' . get_class($itemHolder));
 
-        // Cart doesn't have Shippings, only process Order
         if (!$itemHolder instanceof Order) {
             log_info('[FlexibleShippingFee] Cart detected, skipping (no shippings in cart)');
             return;
         }
 
-        // First, remove existing FlexibleShippingFee delivery fee items
         $this->removeDeliveryFeeItem($itemHolder);
 
         foreach ($itemHolder->getShippings() as $Shipping) {
@@ -87,14 +75,11 @@ class ShippingCalculator implements ItemHolderPreprocessor
         }
     }
 
-    /**
-     * Remove existing delivery fee items (both from EC-CUBE core and this plugin)
-     */
-    private function removeDeliveryFeeItem(Order $Order)
-    {
+    private function removeDeliveryFeeItem(
+        Order $Order
+    ): void {
         foreach ($Order->getShippings() as $Shipping) {
             foreach ($Shipping->getOrderItems() as $item) {
-                // Remove all delivery fee items (isDeliveryFee() checks OrderItemType)
                 if ($item->isDeliveryFee()) {
                     $Shipping->removeOrderItem($item);
                     $Order->removeOrderItem($item);
@@ -104,31 +89,25 @@ class ShippingCalculator implements ItemHolderPreprocessor
         }
     }
 
-    private function calculateShippingFee(Shipping $Shipping, PurchaseContext $context, ItemHolderInterface $itemHolder)
-    {
-        // Calculate shipping fee using ShippingFeeService
+    private function calculateShippingFee(
+        Shipping $Shipping,
+        PurchaseContext $context,
+        ItemHolderInterface $itemHolder
+    ): void {
         $result = $this->shippingFeeService->calculateShippingFee($Shipping);
 
-        // Check for errors
         if ($result['error']) {
             log_error('[FlexibleShippingFee] エラー: ' . $result['error']);
-
-            // Add error message to session flash bag
             $this->session->getFlashBag()->add('eccube.front.error', $result['error']);
-
-            // Set shipping fee to 0 and continue (don't create OrderItem)
             return;
         }
 
-        // Get total shipping fee
         $totalShippingFee = $result['total'];
 
-        // Create OrderItem for shipping fee
         $DeliveryFeeType = $this->entityManager->find(OrderItemType::class, OrderItemType::DELIVERY_FEE);
         $TaxInclude = $this->entityManager->find(TaxDisplayType::class, TaxDisplayType::INCLUDED);
         $Taxation = $this->entityManager->find(TaxType::class, TaxType::TAXATION);
 
-        // Get tax rule for delivery fee (non-product items use default tax rule)
         $TaxRule = $this->taxRuleRepository->getByRule();
 
         $OrderItem = new OrderItem();
@@ -145,7 +124,6 @@ class ShippingCalculator implements ItemHolderPreprocessor
             ->setRoundingType($TaxRule->getRoundingType())
             ->setProcessorName(self::class);
 
-        // Calculate tax (税込 = INCLUDED)
         $tax = $this->taxRuleService->calcTaxIncluded(
             $OrderItem->getPrice(),
             $OrderItem->getTaxRate(),
@@ -157,19 +135,9 @@ class ShippingCalculator implements ItemHolderPreprocessor
         $itemHolder->addItem($OrderItem);
         $Shipping->addOrderItem($OrderItem);
 
-        // Save breakdown for Order (not for Cart)
         if ($itemHolder instanceof Order && $result['breakdown']) {
             $breakdown = $result['breakdown'];
 
-            log_info('[FlexibleShippingFee] エリア: ' . $breakdown['area_name'] .
-                     ', サイズ: ' . $breakdown['size'] .
-                     ', 数量: ' . $breakdown['quantity'] .
-                     ', 基本送料: ' . $breakdown['base_fee'] .
-                     ', クール便: ' . $breakdown['cool_fee'] .
-                     ', 箱代: ' . $breakdown['box_fee'] .
-                     ', 合計: ' . $totalShippingFee);
-
-            // Save breakdown to database (only if shipping has ID)
             $breakdownEntity = $this->shippingFeeService->saveBreakdown(
                 $itemHolder,
                 $Shipping,

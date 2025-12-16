@@ -5,8 +5,6 @@ namespace Plugin\FlexibleShippingFee\Entity;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * SizeConfig
- *
  * @ORM\Table(name="plg_flexible_shipping_size_config")
  * @ORM\Entity(repositoryClass="Plugin\FlexibleShippingFee\Repository\SizeConfigRepository")
  */
@@ -140,9 +138,6 @@ class SizeConfig
         return $this;
     }
 
-    /**
-     * 数量がこの設定範囲内かチェック
-     */
     public function isInRange(int $quantity): bool
     {
         if ($quantity < $this->min_quantity) {
@@ -156,9 +151,6 @@ class SizeConfig
         return true;
     }
 
-    /**
-     * 表示用の数量範囲文字列を取得
-     */
     public function getRangeLabel(): string
     {
         if ($this->max_quantity === null) {

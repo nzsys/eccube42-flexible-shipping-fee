@@ -3,6 +3,7 @@
 namespace Plugin\FlexibleShippingFee\Service;
 
 use Eccube\Entity\Shipping;
+use Eccube\Entity\Order;
 use Plugin\FlexibleShippingFee\Repository\ShippingAreaRepository;
 use Plugin\FlexibleShippingFee\Repository\ShippingRateRepository;
 use Plugin\FlexibleShippingFee\Repository\ShippingBreakdownRepository;
@@ -11,24 +12,16 @@ use Plugin\FlexibleShippingFee\Entity\ShippingBreakdown;
 
 class ShippingFeeService
 {
-    /**
-     * @var ShippingAreaRepository
-     */
+    /** @var ShippingAreaRepository */
     private $shippingAreaRepository;
 
-    /**
-     * @var ShippingRateRepository
-     */
+    /** @var ShippingRateRepository */
     private $shippingRateRepository;
 
-    /**
-     * @var ShippingBreakdownRepository
-     */
+    /** @var ShippingBreakdownRepository */
     private $shippingBreakdownRepository;
 
-    /**
-     * @var SizeConfigRepository
-     */
+    /** @var SizeConfigRepository */
     private $sizeConfigRepository;
 
     public function __construct(
@@ -43,12 +36,10 @@ class ShippingFeeService
         $this->sizeConfigRepository = $sizeConfigRepository;
     }
 
-    /**
-     * @param Shipping $Shipping
-     * @return array ['total' => int, 'breakdown' => array, 'error' => string|null]
-     */
-    public function calculateShippingFee(Shipping $Shipping): array
-    {
+    /** @return array{total: float, breakdown: array{area_name: string, size: int, size_range: string, quantity: int, base_fee: float, cool_fee: float, box_fee: float}|null, error: string|null} */
+    public function calculateShippingFee(
+        Shipping $Shipping
+    ): array {
         $Prefecture = $Shipping->getPref();
         if (!$Prefecture) {
             return ['total' => 0, 'breakdown' => null, 'error' => null];
@@ -57,19 +48,19 @@ class ShippingFeeService
         $quantity = 0;
         $items = $Shipping->getProductOrderItems();
         foreach ($items as $Item) {
-            $itemQty = $Item->getQuantity();
-            log_info('[FlexibleShippingFee] 商品名: ' . $Item->getProductName() . ', 数量: ' . $itemQty);
-            $quantity += $itemQty;
+            $quantity += $Item->getQuantity();
         }
 
-        $size = $this->determineSizeByQuantity($quantity);
-        if ($size === null) {
+        $sizeConfig = $this->sizeConfigRepository->findByQuantity($quantity);
+        if (!$sizeConfig) {
             return [
                 'total' => 0,
                 'breakdown' => null,
                 'error' => '配送先に商品が5個以上含まれています。5個以上の配送はお問い合わせください。'
             ];
         }
+
+        $size = $sizeConfig->getSize();
 
         $area = $this->shippingAreaRepository->findByPrefId($Prefecture->getId());
         if (!$area) {
@@ -99,6 +90,7 @@ class ShippingFeeService
             'breakdown' => [
                 'area_name' => $area->getName(),
                 'size' => $size,
+                'size_range' => $sizeConfig->getRangeLabel(),
                 'quantity' => $quantity,
                 'base_fee' => $baseFee,
                 'cool_fee' => $coolFee,
@@ -108,14 +100,12 @@ class ShippingFeeService
         ];
     }
 
-    /**
-     * @param \Eccube\Entity\Order $order
-     * @param \Eccube\Entity\Shipping $shipping
-     * @param array $breakdown
-     * @return ShippingBreakdown
-     */
-    public function saveBreakdown($order, $shipping, array $breakdown): ?ShippingBreakdown
-    {
+    /** @param array{area_name: string, size: int, quantity: int, base_fee: float, cool_fee: float, box_fee: float} $breakdown */
+    public function saveBreakdown(
+        Order $order,
+        Shipping $shipping,
+        array $breakdown
+    ): ?ShippingBreakdown {
         if (!$shipping->getId()) {
             return null;
         }
@@ -136,20 +126,5 @@ class ShippingFeeService
         $entity->setTotalFee((string)($breakdown['base_fee'] + $breakdown['cool_fee'] + $breakdown['box_fee']));
 
         return $entity;
-    }
-
-    /**
-     * @param int $quantity
-     * @return int|null
-     */
-    private function determineSizeByQuantity(int $quantity): ?int
-    {
-        $sizeConfig = $this->sizeConfigRepository->findByQuantity($quantity);
-
-        if ($sizeConfig) {
-            return $sizeConfig->getSize();
-        }
-
-        return null;
     }
 }

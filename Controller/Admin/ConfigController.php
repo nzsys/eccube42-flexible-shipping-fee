@@ -55,8 +55,9 @@ class ConfigController extends AbstractController
      * @Route("/%eccube_admin_route%/flexible_shipping_fee/area", name="flexible_shipping_fee_admin_area")
      * @Template("@FlexibleShippingFee/admin/area_list.twig")
      */
-    public function areaList(Request $request)
-    {
+    public function areaList(
+        Request $request
+    ) {
         $areas = $this->shippingAreaRepository->findAllOrderBySortNo();
 
         return [
@@ -69,8 +70,10 @@ class ConfigController extends AbstractController
      * @Route("/%eccube_admin_route%/flexible_shipping_fee/area/{id}/edit", requirements={"id" = "\d+"}, name="flexible_shipping_fee_admin_area_edit")
      * @Template("@FlexibleShippingFee/admin/area_edit.twig")
      */
-    public function areaEdit(Request $request, $id = null)
-    {
+    public function areaEdit(
+        Request $request,
+        $id = null
+    ) {
         if ($id) {
             $area = $this->shippingAreaRepository->find($id);
             if (!$area) {
@@ -136,8 +139,10 @@ class ConfigController extends AbstractController
     /**
      * @Route("/%eccube_admin_route%/flexible_shipping_fee/area/{id}/delete", requirements={"id" = "\d+"}, name="flexible_shipping_fee_admin_area_delete", methods={"DELETE"})
      */
-    public function areaDelete(Request $request, $id)
-    {
+    public function areaDelete(
+        Request $request,
+        $id
+    ) {
         $token = $request->get('_token');
         if (!$this->isCsrfTokenValid('flexible_shipping_fee_admin_area_delete' . $id, $token)) {
             throw new \InvalidArgumentException('CSRF token is invalid.');
@@ -160,8 +165,9 @@ class ConfigController extends AbstractController
      * @Route("/%eccube_admin_route%/flexible_shipping_fee/rate", name="flexible_shipping_fee_admin_rate")
      * @Template("@FlexibleShippingFee/admin/rate_list.twig")
      */
-    public function rateList(Request $request)
-    {
+    public function rateList(
+        Request $request
+    ) {
         $areas = $this->shippingAreaRepository->findAllOrderBySortNo();
 
         $ratesByArea = [];
@@ -180,8 +186,11 @@ class ConfigController extends AbstractController
      * @Route("/%eccube_admin_route%/flexible_shipping_fee/rate/{id}/edit", requirements={"id" = "\d+"}, name="flexible_shipping_fee_admin_rate_edit")
      * @Template("@FlexibleShippingFee/admin/rate_edit.twig")
      */
-    public function rateEdit(Request $request, $id = null, $area_id = null)
-    {
+    public function rateEdit(
+        Request $request,
+        $id = null,
+        $area_id = null
+    ) {
         if ($id) {
             $rate = $this->shippingRateRepository->find($id);
             if (!$rate) {
@@ -231,8 +240,10 @@ class ConfigController extends AbstractController
     /**
      * @Route("/%eccube_admin_route%/flexible_shipping_fee/rate/{id}/delete", requirements={"id" = "\d+"}, name="flexible_shipping_fee_admin_rate_delete", methods={"DELETE"})
      */
-    public function rateDelete(Request $request, $id)
-    {
+    public function rateDelete(
+        Request $request,
+        $id
+    ) {
         $token = $request->get('_token');
         if (!$this->isCsrfTokenValid('flexible_shipping_fee_admin_rate_delete' . $id, $token)) {
             throw new \InvalidArgumentException('CSRF token is invalid.');
@@ -255,8 +266,9 @@ class ConfigController extends AbstractController
      * @Route("/%eccube_admin_route%/flexible_shipping_fee/size", name="flexible_shipping_fee_admin_size")
      * @Template("@FlexibleShippingFee/admin/size_list.twig")
      */
-    public function sizeList(Request $request)
-    {
+    public function sizeList(
+        Request $request
+    ) {
         $configs = $this->sizeConfigRepository->findAllOrderBySortNo();
 
         return [
@@ -269,8 +281,10 @@ class ConfigController extends AbstractController
      * @Route("/%eccube_admin_route%/flexible_shipping_fee/size/{id}/edit", requirements={"id" = "\d+"}, name="flexible_shipping_fee_admin_size_edit")
      * @Template("@FlexibleShippingFee/admin/size_edit.twig")
      */
-    public function sizeEdit(Request $request, $id = null)
-    {
+    public function sizeEdit(
+        Request $request,
+        $id = null
+    ) {
         if ($id) {
             $config = $this->sizeConfigRepository->find($id);
             if (!$config) {
@@ -309,8 +323,10 @@ class ConfigController extends AbstractController
     /**
      * @Route("/%eccube_admin_route%/flexible_shipping_fee/size/{id}/delete", requirements={"id" = "\d+"}, name="flexible_shipping_fee_admin_size_delete", methods={"DELETE"})
      */
-    public function sizeDelete(Request $request, $id)
-    {
+    public function sizeDelete(
+        Request $request,
+        $id
+    ) {
         $token = $request->get('_token');
         if (!$this->isCsrfTokenValid('flexible_shipping_fee_admin_size_delete' . $id, $token)) {
             throw new \InvalidArgumentException('CSRF token is invalid.');
@@ -330,8 +346,6 @@ class ConfigController extends AbstractController
     }
 
     /**
-     * プラグイン設定画面（EC-CUBEプラグイン管理からのエントリーポイント）
-     *
      * @Route("/%eccube_admin_route%/store/plugin/FlexibleShippingFee/config", name="plugin_FlexibleShippingFee_config")
      */
     public function index()

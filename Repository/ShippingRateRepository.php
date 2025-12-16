@@ -24,7 +24,8 @@ class ShippingRateRepository extends AbstractRepository
             ->getOneOrNullResult();
     }
 
-    public function findByAreaId(int $areaId)
+    /** @return ShippingRate[] */
+    public function findByAreaId(int $areaId): array
     {
         return $this->createQueryBuilder('sr')
             ->where('sr.area_id = :areaId')

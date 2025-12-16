@@ -5,8 +5,6 @@ namespace Plugin\FlexibleShippingFee\Entity;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * ShippingRate
- *
  * @ORM\Table(name="plg_flexible_shipping_rate", uniqueConstraints={@ORM\UniqueConstraint(name="unique_area_size", columns={"area_id", "size"})})
  * @ORM\Entity(repositoryClass="Plugin\FlexibleShippingFee\Repository\ShippingRateRepository")
  */

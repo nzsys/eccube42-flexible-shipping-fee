@@ -13,7 +13,8 @@ class ShippingAreaRepository extends AbstractRepository
         parent::__construct($registry, ShippingArea::class);
     }
 
-    public function findAllOrderBySortNo()
+    /** @return ShippingArea[] */
+    public function findAllOrderBySortNo(): array
     {
         return $this->createQueryBuilder('sa')
             ->orderBy('sa.sort_no', 'ASC')
@@ -22,7 +23,7 @@ class ShippingAreaRepository extends AbstractRepository
             ->getResult();
     }
 
-    public function getMaxSortNo()
+    public function getMaxSortNo(): int
     {
         $result = $this->createQueryBuilder('sa')
             ->select('MAX(sa.sort_no)')

@@ -9,19 +9,12 @@ use Eccube\Service\PurchaseFlow\PurchaseContext;
 use Plugin\FlexibleShippingFee\Service\ShippingFeeService;
 use Doctrine\ORM\EntityManagerInterface;
 
-/**
- * Flexible Shipping Fee Calculator based on configurable area and rates
- */
 class ShippingFeeCalculator implements ItemHolderPreprocessor
 {
-    /**
-     * @var ShippingFeeService
-     */
+    /** @var ShippingFeeService */
     private $shippingFeeService;
 
-    /**
-     * @var EntityManagerInterface
-     */
+    /** @var EntityManagerInterface */
     private $entityManager;
 
     public function __construct(
@@ -32,18 +25,16 @@ class ShippingFeeCalculator implements ItemHolderPreprocessor
         $this->entityManager = $entityManager;
     }
 
-    public function process(ItemHolderInterface $itemHolder, PurchaseContext $context)
-    {
+    public function process(
+        ItemHolderInterface $itemHolder,
+        PurchaseContext $context
+    ): void {
         if (!($itemHolder instanceof Order)) {
             return;
         }
 
-        log_info('[FlexibleShippingFee] ShippingFeeCalculator::process() called');
-
         foreach ($itemHolder->getShippings() as $Shipping) {
             $Prefecture = $Shipping->getPrefecture();
-            log_info('[FlexibleShippingFee] Shipping ID: ' . $Shipping->getId() . ', Prefecture: ' . ($Prefecture ? $Prefecture->getName() : 'null'));
-
             $result = $this->shippingFeeService->calculateShippingFee($Shipping);
 
             if ($result['error']) {
@@ -52,13 +43,8 @@ class ShippingFeeCalculator implements ItemHolderPreprocessor
                 continue;
             }
 
-            log_info('[FlexibleShippingFee] Calculated fee: ' . $result['total']);
-            log_info('[FlexibleShippingFee] Breakdown: ' . json_encode($result['breakdown']));
-
-            // Set shipping fee
             $Shipping->setShippingDeliveryFee($result['total']);
 
-            // Save breakdown if this is an order (has ID)
             if ($itemHolder->getId() && $Shipping->getId() && $result['breakdown']) {
                 $breakdown = $this->shippingFeeService->saveBreakdown(
                     $itemHolder,
@@ -67,8 +53,6 @@ class ShippingFeeCalculator implements ItemHolderPreprocessor
                 );
                 $this->entityManager->persist($breakdown);
                 $this->entityManager->flush();
-
-                log_info('[FlexibleShippingFee] Breakdown saved for Order ID: ' . $itemHolder->getId() . ', Shipping ID: ' . $Shipping->getId());
             }
         }
     }

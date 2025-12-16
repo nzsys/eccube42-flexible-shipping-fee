@@ -58,16 +58,16 @@ class ShippingFeeServiceTest extends TestCase
 
     public function testCalculateShippingFeeWithQuantity2()
     {
-        // Setup prefecture
         $prefecture = $this->createMock(Pref::class);
         $prefecture->method('getId')->willReturn(13); // Tokyo
         $prefecture->method('getName')->willReturn('東京都');
 
-        // Setup order items
         $item1 = $this->createMock(OrderItem::class);
         $item1->method('getQuantity')->willReturn(1);
+        $item1->method('getProductName')->willReturn('商品1');
         $item2 = $this->createMock(OrderItem::class);
         $item2->method('getQuantity')->willReturn(1);
+        $item2->method('getProductName')->willReturn('商品2');
 
         $shipping = $this->getMockBuilder(Shipping::class)
             ->disableOriginalConstructor()
@@ -115,6 +115,7 @@ class ShippingFeeServiceTest extends TestCase
         $this->assertIsArray($result['breakdown']);
         $this->assertEquals('関東', $result['breakdown']['area_name']);
         $this->assertEquals(60, $result['breakdown']['size']);
+        $this->assertEquals('1〜2個', $result['breakdown']['size_range']);
         $this->assertEquals(2, $result['breakdown']['quantity']);
         $this->assertNull($result['error']);
     }
@@ -129,6 +130,7 @@ class ShippingFeeServiceTest extends TestCase
         for ($i = 0; $i < 4; $i++) {
             $item = $this->createMock(OrderItem::class);
             $item->method('getQuantity')->willReturn(1);
+            $item->method('getProductName')->willReturn('商品' . ($i + 1));
             $items[] = $item;
         }
 
@@ -176,6 +178,7 @@ class ShippingFeeServiceTest extends TestCase
 
         $this->assertEquals(1355.0, $result['total']); // 874 + 330 + 151
         $this->assertEquals(80, $result['breakdown']['size']);
+        $this->assertEquals('3〜4個', $result['breakdown']['size_range']);
         $this->assertEquals(4, $result['breakdown']['quantity']);
     }
 
@@ -188,6 +191,7 @@ class ShippingFeeServiceTest extends TestCase
         for ($i = 0; $i < 5; $i++) {
             $item = $this->createMock(OrderItem::class);
             $item->method('getQuantity')->willReturn(1);
+            $item->method('getProductName')->willReturn('商品' . ($i + 1));
             $items[] = $item;
         }
 
@@ -218,6 +222,7 @@ class ShippingFeeServiceTest extends TestCase
 
         $item = $this->createMock(OrderItem::class);
         $item->method('getQuantity')->willReturn(1);
+        $item->method('getProductName')->willReturn('商品1');
 
         $shipping = $this->getMockBuilder(Shipping::class)
             ->disableOriginalConstructor()

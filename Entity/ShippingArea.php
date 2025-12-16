@@ -7,8 +7,6 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 
 /**
- * ShippingArea
- *
  * @ORM\Table(name="plg_flexible_shipping_area")
  * @ORM\Entity(repositoryClass="Plugin\FlexibleShippingFee\Repository\ShippingAreaRepository")
  */

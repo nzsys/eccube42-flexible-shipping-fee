@@ -7,8 +7,6 @@ use Eccube\Entity\Order;
 use Eccube\Entity\Shipping;
 
 /**
- * ShippingBreakdown
- *
  * @ORM\Table(name="plg_flexible_shipping_breakdown")
  * @ORM\Entity(repositoryClass="Plugin\FlexibleShippingFee\Repository\ShippingBreakdownRepository")
  */

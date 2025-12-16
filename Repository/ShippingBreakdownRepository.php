@@ -13,7 +13,8 @@ class ShippingBreakdownRepository extends AbstractRepository
         parent::__construct($registry, ShippingBreakdown::class);
     }
 
-    public function findByOrderId(int $orderId)
+    /** @return ShippingBreakdown[] */
+    public function findByOrderId(int $orderId): array
     {
         return $this->createQueryBuilder('sb')
             ->where('sb.order_id = :orderId')
@@ -32,7 +33,7 @@ class ShippingBreakdownRepository extends AbstractRepository
             ->getOneOrNullResult();
     }
 
-    public function deleteByShippingId(int $shippingId)
+    public function deleteByShippingId(int $shippingId): int
     {
         return $this->createQueryBuilder('sb')
             ->delete()

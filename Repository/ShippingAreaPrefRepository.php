@@ -13,7 +13,8 @@ class ShippingAreaPrefRepository extends AbstractRepository
         parent::__construct($registry, ShippingAreaPref::class);
     }
 
-    public function findByAreaId(int $areaId)
+    /** @return ShippingAreaPref[] */
+    public function findByAreaId(int $areaId): array
     {
         return $this->createQueryBuilder('sap')
             ->where('sap.area_id = :areaId')
@@ -22,7 +23,7 @@ class ShippingAreaPrefRepository extends AbstractRepository
             ->getResult();
     }
 
-    public function deleteByAreaId(int $areaId)
+    public function deleteByAreaId(int $areaId): int
     {
         return $this->createQueryBuilder('sap')
             ->delete()
