@@ -30,7 +30,7 @@ class ShippingAreaPref
     /**
      * @var int
      *
-     * @ORM\Column(name="pref_id", type="integer")
+     * @ORM\Column(name="pref_id", type="smallint", options={"unsigned":true})
      */
     private $pref_id;
 

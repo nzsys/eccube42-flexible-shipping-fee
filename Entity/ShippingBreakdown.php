@@ -24,14 +24,14 @@ class ShippingBreakdown
     /**
      * @var int
      *
-     * @ORM\Column(name="order_id", type="integer")
+     * @ORM\Column(name="order_id", type="integer", options={"unsigned":true})
      */
     private $order_id;
 
     /**
      * @var int
      *
-     * @ORM\Column(name="shipping_id", type="integer")
+     * @ORM\Column(name="shipping_id", type="integer", options={"unsigned":true})
      */
     private $shipping_id;
 

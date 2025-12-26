@@ -2,15 +2,26 @@
 
 namespace Plugin\FlexibleShippingFee;
 
+use Doctrine\ORM\Tools\SchemaTool;
 use Eccube\Plugin\AbstractPluginManager;
 use Eccube\Common\EccubeConfig;
+use Eccube\Entity\Master\Pref;
+use Plugin\FlexibleShippingFee\Entity\ShippingArea;
+use Plugin\FlexibleShippingFee\Entity\ShippingAreaPref;
+use Plugin\FlexibleShippingFee\Entity\ShippingBreakdown;
+use Plugin\FlexibleShippingFee\Entity\ShippingRate;
+use Plugin\FlexibleShippingFee\Entity\SizeConfig;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 class PluginManager extends AbstractPluginManager
 {
-    public function enable(array $meta, ContainerInterface $container)
+    public function install(array $meta, ContainerInterface $container)
     {
         $this->createTables($container);
+    }
+
+    public function enable(array $meta, ContainerInterface $container)
+    {
         $this->insertInitialData($container);
     }
 
@@ -24,140 +35,61 @@ class PluginManager extends AbstractPluginManager
     private function createTables(ContainerInterface $container)
     {
         $entityManager = $container->get('doctrine.orm.entity_manager');
-        $connection = $entityManager->getConnection();
-        $schema = $connection->getSchemaManager();
+        $metadatas = [
+            $entityManager->getClassMetadata(ShippingArea::class),
+            $entityManager->getClassMetadata(ShippingAreaPref::class),
+            $entityManager->getClassMetadata(ShippingRate::class),
+            $entityManager->getClassMetadata(ShippingBreakdown::class),
+            $entityManager->getClassMetadata(SizeConfig::class),
+        ];
 
-        if (!$schema->tablesExist(['plg_flexible_shipping_area'])) {
-            $connection->executeStatement("
-                CREATE TABLE plg_flexible_shipping_area (
-                    id INT AUTO_INCREMENT NOT NULL,
-                    name VARCHAR(255) NOT NULL,
-                    sort_no INT NOT NULL DEFAULT 0,
-                    create_date DATETIME NOT NULL,
-                    update_date DATETIME NOT NULL,
-                    PRIMARY KEY(id)
-                ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci ENGINE = InnoDB
-            ");
-        }
-
-        if (!$schema->tablesExist(['plg_flexible_shipping_area_pref'])) {
-            $connection->executeStatement("
-                CREATE TABLE plg_flexible_shipping_area_pref (
-                    id INT AUTO_INCREMENT NOT NULL,
-                    area_id INT NOT NULL,
-                    pref_id INT NOT NULL,
-                    create_date DATETIME NOT NULL,
-                    update_date DATETIME NOT NULL,
-                    PRIMARY KEY(id),
-                    INDEX IDX_AREA (area_id),
-                    INDEX IDX_PREF (pref_id),
-                    UNIQUE INDEX unique_area_pref (area_id, pref_id)
-                ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci ENGINE = InnoDB
-            ");
-        }
-
-        if (!$schema->tablesExist(['plg_flexible_shipping_rate'])) {
-            $connection->executeStatement("
-                CREATE TABLE plg_flexible_shipping_rate (
-                    id INT AUTO_INCREMENT NOT NULL,
-                    area_id INT NOT NULL,
-                    size INT NOT NULL,
-                    rate DECIMAL(12, 2) NOT NULL DEFAULT 0,
-                    cool_fee DECIMAL(12, 2) NOT NULL DEFAULT 0,
-                    box_fee DECIMAL(12, 2) NOT NULL DEFAULT 0,
-                    create_date DATETIME NOT NULL,
-                    update_date DATETIME NOT NULL,
-                    PRIMARY KEY(id),
-                    INDEX IDX_AREA_SIZE (area_id, size),
-                    UNIQUE INDEX unique_area_size (area_id, size)
-                ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci ENGINE = InnoDB
-            ");
-        }
-
-        if (!$schema->tablesExist(['plg_flexible_shipping_breakdown'])) {
-            $connection->executeStatement("
-                CREATE TABLE plg_flexible_shipping_breakdown (
-                    id INT AUTO_INCREMENT NOT NULL,
-                    order_id INT NOT NULL,
-                    shipping_id INT NOT NULL,
-                    area_name VARCHAR(255) NOT NULL,
-                    size INT NOT NULL,
-                    quantity INT NOT NULL,
-                    base_fee DECIMAL(12, 2) NOT NULL DEFAULT 0,
-                    cool_fee DECIMAL(12, 2) NOT NULL DEFAULT 0,
-                    box_fee DECIMAL(12, 2) NOT NULL DEFAULT 0,
-                    total_fee DECIMAL(12, 2) NOT NULL DEFAULT 0,
-                    create_date DATETIME NOT NULL,
-                    update_date DATETIME NOT NULL,
-                    PRIMARY KEY(id),
-                    INDEX IDX_ORDER (order_id),
-                    INDEX IDX_SHIPPING (shipping_id)
-                ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci ENGINE = InnoDB
-            ");
-        }
-
-        if (!$schema->tablesExist(['plg_flexible_shipping_size_config'])) {
-            $connection->executeStatement("
-                CREATE TABLE plg_flexible_shipping_size_config (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-                    size INTEGER NOT NULL,
-                    min_quantity INTEGER NOT NULL,
-                    max_quantity INTEGER DEFAULT NULL,
-                    sort_no INTEGER NOT NULL DEFAULT 0,
-                    create_date DATETIME NOT NULL,
-                    update_date DATETIME NOT NULL
-                )
-            ");
-
-            $connection->executeStatement("
-                CREATE INDEX IDX_SORT ON plg_flexible_shipping_size_config (sort_no)
-            ");
-        }
+        $schemaTool = new SchemaTool($entityManager);
+        $schemaTool->updateSchema($metadatas, true);
     }
 
     private function dropTables(ContainerInterface $container)
     {
         $entityManager = $container->get('doctrine.orm.entity_manager');
-        $connection = $entityManager->getConnection();
-        $schema = $connection->getSchemaManager();
+        $metadatas = [
+            $entityManager->getClassMetadata(ShippingBreakdown::class),
+            $entityManager->getClassMetadata(SizeConfig::class),
+            $entityManager->getClassMetadata(ShippingRate::class),
+            $entityManager->getClassMetadata(ShippingAreaPref::class),
+            $entityManager->getClassMetadata(ShippingArea::class),
+        ];
 
-        if ($schema->tablesExist(['plg_flexible_shipping_breakdown'])) {
-            $connection->executeStatement('DROP TABLE plg_flexible_shipping_breakdown');
-        }
-
-        if ($schema->tablesExist(['plg_flexible_shipping_size_config'])) {
-            $connection->executeStatement('DROP TABLE plg_flexible_shipping_size_config');
-        }
-
-        if ($schema->tablesExist(['plg_flexible_shipping_rate'])) {
-            $connection->executeStatement('DROP TABLE plg_flexible_shipping_rate');
-        }
-
-        if ($schema->tablesExist(['plg_flexible_shipping_area_pref'])) {
-            $connection->executeStatement('DROP TABLE plg_flexible_shipping_area_pref');
-        }
-
-        if ($schema->tablesExist(['plg_flexible_shipping_area'])) {
-            $connection->executeStatement('DROP TABLE plg_flexible_shipping_area');
-        }
+        $schemaTool = new SchemaTool($entityManager);
+        $schemaTool->dropSchema($metadatas);
     }
 
     private function insertInitialData(ContainerInterface $container)
     {
         $entityManager = $container->get('doctrine.orm.entity_manager');
-        $connection = $entityManager->getConnection();
 
-        $sizeCount = $connection->executeQuery('SELECT COUNT(*) FROM plg_flexible_shipping_size_config')->fetchOne();
+        $sizeConfigRepo = $entityManager->getRepository(SizeConfig::class);
+        $sizeCount = count($sizeConfigRepo->findAll());
+
         if ($sizeCount == 0) {
-            $connection->executeStatement("
-                INSERT INTO plg_flexible_shipping_size_config (size, min_quantity, max_quantity, sort_no, create_date, update_date)
-                VALUES
-                    (60, 1, 2, 1, datetime('now'), datetime('now')),
-                    (80, 3, 4, 2, datetime('now'), datetime('now'))
-            ");
+            $sizeConfig60 = new SizeConfig();
+            $sizeConfig60->setSize(60);
+            $sizeConfig60->setMinQuantity(1);
+            $sizeConfig60->setMaxQuantity(2);
+            $sizeConfig60->setSortNo(1);
+            $entityManager->persist($sizeConfig60);
+
+            $sizeConfig80 = new SizeConfig();
+            $sizeConfig80->setSize(80);
+            $sizeConfig80->setMinQuantity(3);
+            $sizeConfig80->setMaxQuantity(4);
+            $sizeConfig80->setSortNo(2);
+            $entityManager->persist($sizeConfig80);
+
+            $entityManager->flush();
         }
 
-        $areaCount = $connection->executeQuery('SELECT COUNT(*) FROM plg_flexible_shipping_area')->fetchOne();
+        $areaRepo = $entityManager->getRepository(ShippingArea::class);
+        $areaCount = count($areaRepo->findAll());
+
         if ($areaCount > 0) {
             return;
         }
@@ -181,28 +113,39 @@ class PluginManager extends AbstractPluginManager
         $rates80 = [561, 748, 797, 874, 957, 1056, 1056, 1232, 1320, 1320, 1463, 2948];
 
         foreach ($areas as $index => $areaData) {
-            $connection->executeStatement(
-                "INSERT INTO plg_flexible_shipping_area (name, sort_no, create_date, update_date) VALUES (?, ?, datetime('now'), datetime('now'))",
-                [$areaData['name'], $index + 1]
-            );
-            $areaId = $connection->lastInsertId();
+            $area = new ShippingArea();
+            $area->setName($areaData['name']);
+            $area->setSortNo($index + 1);
+            $entityManager->persist($area);
+            $entityManager->flush();
 
             foreach ($areaData['prefs'] as $prefId) {
-                $connection->executeStatement(
-                    "INSERT INTO plg_flexible_shipping_area_pref (area_id, pref_id, create_date, update_date) VALUES (?, ?, datetime('now'), datetime('now'))",
-                    [$areaId, $prefId]
-                );
+                $pref = $entityManager->getRepository(Pref::class)->find($prefId);
+                if ($pref) {
+                    $areaPref = new ShippingAreaPref();
+                    $areaPref->setShippingArea($area);
+                    $areaPref->setPref($pref);
+                    $entityManager->persist($areaPref);
+                }
             }
 
-            $connection->executeStatement(
-                "INSERT INTO plg_flexible_shipping_rate (area_id, size, rate, cool_fee, box_fee, create_date, update_date) VALUES (?, 60, ?, 275, 107, datetime('now'), datetime('now'))",
-                [$areaId, $rates60[$index]]
-            );
+            $rate60 = new ShippingRate();
+            $rate60->setShippingArea($area);
+            $rate60->setSize(60);
+            $rate60->setRate((string)$rates60[$index]);
+            $rate60->setCoolFee('275');
+            $rate60->setBoxFee('107');
+            $entityManager->persist($rate60);
 
-            $connection->executeStatement(
-                "INSERT INTO plg_flexible_shipping_rate (area_id, size, rate, cool_fee, box_fee, create_date, update_date) VALUES (?, 80, ?, 330, 151, datetime('now'), datetime('now'))",
-                [$areaId, $rates80[$index]]
-            );
+            $rate80 = new ShippingRate();
+            $rate80->setShippingArea($area);
+            $rate80->setSize(80);
+            $rate80->setRate((string)$rates80[$index]);
+            $rate80->setCoolFee('330');
+            $rate80->setBoxFee('151');
+            $entityManager->persist($rate80);
+
+            $entityManager->flush();
         }
     }
 }
